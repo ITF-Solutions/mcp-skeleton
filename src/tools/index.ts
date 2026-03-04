@@ -1,4 +1,5 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z as zod } from "zod";
 import type { TokenStore } from "../storage/token-store.js";
 import type { CacheStore } from "../storage/cache-store.js";
 
@@ -31,13 +32,16 @@ export function registerTools(
     {
       description: "Echoes back the provided message",
       title: "Echo",
+      inputSchema: {
+        message: zod.string().describe("Message to echo back"),
+      },
     },
-    async () => {
+    async ({ message }) => {
       return {
         content: [
           {
             type: "text",
-            text: "Echo tool - call with { message: 'your message' }",
+            text: `Echo: ${message}`,
           },
         ],
       };
@@ -45,5 +49,30 @@ export function registerTools(
   );
 
   // TODO: Add your tools here
-  // See skylight-mcp for examples of tools with parameters
+  // Example:
+  //
+  // server.registerTool(
+  //   "my_tool",
+  //   {
+  //     description: "Description of what my tool does",
+  //     title: "My Tool",
+  //     inputSchema: {
+  //       arg1: zod.string().describe("Description of arg1"),
+  //       arg2: zod.number().optional().describe("Optional numeric argument"),
+  //     },
+  //   },
+  //   async ({ arg1, arg2 }) => {
+  //     // Your tool implementation
+  //     const result = await someApiCall(arg1, arg2);
+  //
+  //     return {
+  //       content: [
+  //         {
+  //           type: "text",
+  //           text: `Result: ${result}`,
+  //         },
+  //       ],
+  //     };
+  //   }
+  // );
 }
