@@ -57,7 +57,22 @@ Test with mcp-remote:
 npx mcp-remote http://localhost:3000/sse
 ```
 
-Or test the health endpoint:
+Or connect from Claude Desktop using mcp-remote. Add to your config:
+
+```json
+{
+  "mcpServers": {
+    "my-mcp-server-http": {
+      "command": "npx",
+      "args": ["mcp-remote", "http://localhost:3000/sse"]
+    }
+  }
+}
+```
+
+**Note:** The HTTP server must be running (`npm run mcp:http`) for Claude Desktop to connect.
+
+You can also test the health endpoint:
 
 ```bash
 curl http://localhost:3000/health
@@ -196,6 +211,53 @@ npm run deploy
 
 ```bash
 curl https://your-worker.your-subdomain.workers.dev/health
+```
+
+## Deployment Modes Comparison
+
+| Mode | When to Use | Claude Desktop Config | Persistence |
+|------|-------------|----------------------|-------------|
+| **stdio** | Local development, simplest setup | Direct `node` command | None (in-memory) |
+| **HTTP (local)** | Testing HTTP/SSE, Docker deployment | Via `npx mcp-remote` | None (in-memory) |
+| **HTTP (Docker)** | Production on VPS/server | Via `npx mcp-remote` with public URL | None (in-memory) |
+| **Worker** | Serverless production, global edge | Via `npx mcp-remote` with Worker URL | Yes (Cloudflare KV) |
+
+### Claude Desktop Examples
+
+**Stdio mode (local):**
+```json
+{
+  "mcpServers": {
+    "my-server": {
+      "command": "node",
+      "args": ["/path/to/dist/cli.js"]
+    }
+  }
+}
+```
+
+**HTTP mode (local or remote):**
+```json
+{
+  "mcpServers": {
+    "my-server": {
+      "command": "npx",
+      "args": ["mcp-remote", "http://localhost:3000/sse"]
+    }
+  }
+}
+```
+
+**Cloudflare Worker:**
+```json
+{
+  "mcpServers": {
+    "my-server": {
+      "command": "npx",
+      "args": ["mcp-remote", "https://my-server.my-subdomain.workers.dev/sse"]
+    }
+  }
+}
 ```
 
 ## Configuration
