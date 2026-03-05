@@ -43,7 +43,7 @@ function getHonoApp(env: WorkerEnv) {
     const tokenStore = new KvTokenStore(env.SKELETON_KV, env.ENCRYPTION_KEY);
     const cacheStore = new KvCacheStore(env.SKELETON_KV);
 
-    honoApp = createMcpApp({ tokenStore, cacheStore });
+    honoApp = createMcpApp({ tokenStore, cacheStore, stateless: true });
   }
 
   return honoApp;

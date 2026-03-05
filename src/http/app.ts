@@ -14,6 +14,8 @@ import { registerTools } from "../tools/index.js";
 export interface CreateMcpAppOptions {
   tokenStore: TokenStore;
   cacheStore: CacheStore;
+  /** When true, creates a fresh server per request (no session tracking). */
+  stateless?: boolean;
 }
 
 // ============================================================================
@@ -28,110 +30,119 @@ export interface CreateMcpAppOptions {
  * Each MCP client gets its own McpServer instance (not shared).
  */
 export function createMcpApp(options: CreateMcpAppOptions): Hono {
-  const { tokenStore, cacheStore } = options;
+  const { tokenStore, cacheStore, stateless = false } = options;
   const app = new Hono();
 
-  // CORS middleware (allow all origins for MCP clients)
-  app.use("/*", cors({ origin: "*" }));
+  // CORS middleware
+  app.use("/*", cors({
+    origin: "*",
+    allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "mcp-session-id", "Last-Event-ID", "mcp-protocol-version"],
+    exposeHeaders: ["mcp-session-id", "mcp-protocol-version"],
+  }));
 
   // Health check endpoint
   app.get("/health", (c) => {
-    return c.json({ status: "ok", mode: "remote" });
+    return c.json({ status: "ok", mode: stateless ? "stateless" : "session" });
   });
 
-  // Store server and transport by session ID (one server instance per session)
-  const sessions: Record<
-    string,
-    {
+  // Helper to create a new MCP server with tools registered
+  const createServer = () => {
+    const server = new McpServer({
+      name: "mcp-skeleton",
+      version: "1.0.0",
+      description: "Template MCP server",
+    });
+
+    registerTools(server, { tokenStore, cacheStore });
+
+    return server;
+  };
+
+  if (stateless) {
+    // ---- Stateless mode: fresh server + transport per request ----
+    // Used by Cloudflare Workers and proxy-based MCP clients (e.g. Anthropic)
+    // that don't maintain session state across requests.
+    app.all("/mcp", async (c) => {
+      try {
+        const transport = new WebStandardStreamableHTTPServerTransport();
+        const server = createServer();
+        await server.connect(transport);
+        return transport.handleRequest(c.req.raw);
+      } catch (error) {
+        console.error("Error handling MCP request:", error);
+        return c.json(
+          {
+            jsonrpc: "2.0",
+            error: { code: -32000, message: "Internal server error" },
+            id: null,
+          },
+          500
+        );
+      }
+    });
+  } else {
+    // ---- Session mode: per-session server instances (for Node.js HTTP) ----
+    const sessions: Record<string, {
       server: McpServer;
       transport: WebStandardStreamableHTTPServerTransport;
-    }
-  > = {};
+    }> = {};
 
-  // MCP POST endpoint handler
-  app.post("/mcp", async (c) => {
-    const sessionId = c.req.header("mcp-session-id");
+    app.post("/mcp", async (c) => {
+      const sessionId = c.req.header("mcp-session-id");
 
-    try {
-      // Reuse existing session
-      if (sessionId && sessions[sessionId]) {
-        const { transport } = sessions[sessionId];
-        const response = await transport.handleRequest(c.req.raw);
-        return response;
-      }
+      try {
+        // Reuse existing session
+        if (sessionId && sessions[sessionId]) {
+          const { transport } = sessions[sessionId];
+          return transport.handleRequest(c.req.raw);
+        }
 
-      // Create new session for initialize request without session ID
-      if (!sessionId) {
-        // Create new MCP server instance for this session
-        const server = new McpServer({
-          name: "mcp-skeleton",
-          version: "1.0.0",
-          description: "Template MCP server",
-        });
-
-        // Register all MCP tools for this server instance
-        registerTools(server, { tokenStore, cacheStore });
-
-        // Create transport
+        // New session
+        const server = createServer();
         const transport = new WebStandardStreamableHTTPServerTransport({
           sessionIdGenerator: () => crypto.randomUUID(),
         });
 
-        // Connect server to transport
         await server.connect(transport);
         const response = await transport.handleRequest(c.req.raw);
 
-        // Store session by session ID for future requests
         if (transport.sessionId) {
           sessions[transport.sessionId] = { server, transport };
         }
 
         return response;
+      } catch (error) {
+        console.error("Error handling MCP request:", error);
+        return c.json(
+          {
+            jsonrpc: "2.0",
+            error: { code: -32000, message: "Internal server error" },
+            id: null,
+          },
+          500
+        );
+      }
+    });
+
+    app.get("/mcp", async (c) => {
+      const sessionId = c.req.header("mcp-session-id");
+
+      if (!sessionId || !sessions[sessionId]) {
+        return c.json(
+          {
+            jsonrpc: "2.0",
+            error: { code: -32000, message: "Bad Request: invalid session ID" },
+            id: null,
+          },
+          400
+        );
       }
 
-      return c.json(
-        {
-          jsonrpc: "2.0",
-          error: {
-            code: -32000,
-            message: "Bad Request: invalid session ID or method",
-          },
-          id: null,
-        },
-        400
-      );
-    } catch (error) {
-      console.error("Error handling MCP request:", error);
-      return c.json(
-        {
-          jsonrpc: "2.0",
-          error: { code: -32000, message: "Internal server error" },
-          id: null,
-        },
-        500
-      );
-    }
-  });
-
-  // MCP GET endpoint handler (for streaming responses)
-  app.get("/mcp", async (c) => {
-    const sessionId = c.req.header("mcp-session-id");
-
-    if (!sessionId || !sessions[sessionId]) {
-      return c.json(
-        {
-          jsonrpc: "2.0",
-          error: { code: -32000, message: "Bad Request: invalid session ID" },
-          id: null,
-        },
-        400
-      );
-    }
-
-    const { transport } = sessions[sessionId];
-    const response = await transport.handleRequest(c.req.raw);
-    return response;
-  });
+      const { transport } = sessions[sessionId];
+      return transport.handleRequest(c.req.raw);
+    });
+  }
 
   return app;
 }
