@@ -37,9 +37,4 @@ coverage/
 .wrangler/
 wrangler.toml.local
 
-# Terraform
-terraform/.terraform/
-terraform/*.tfstate
-terraform/*.tfstate.backup
-terraform/.terraform.lock.hcl
-terraform/terraform.tfvars
+# Terraform (infrastructure/cloudflare-access/ has its own .gitignore for state/secrets)

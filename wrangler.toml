@@ -3,12 +3,30 @@ main = "dist/entrypoints/worker.js"
 compatibility_date = "2026-03-04"
 compatibility_flags = ["nodejs_compat"]
 
+[vars]
+OAUTH_ENABLED = "false"
+
 # KV namespace for token and cache storage
 # Run: wrangler kv:namespace create "SKELETON_KV"
 # Then update the id below with the output
 [[kv_namespaces]]
 binding = "SKELETON_KV"
 id = "YOUR_KV_NAMESPACE_ID"
+
+# KV namespace for OAuth token storage (used by @cloudflare/workers-oauth-provider)
+# Only needed when OAUTH_ENABLED = "true"
+# [[kv_namespaces]]
+# binding = "OAUTH_KV"
+# id = "<your-oauth-kv-id>"
+# preview_id = "<your-oauth-kv-preview-id>"
+
+# OAuth secrets (set via wrangler secret put when OAUTH_ENABLED=true):
+# ACCESS_CLIENT_ID         - OIDC client ID
+# ACCESS_CLIENT_SECRET     - OIDC client secret
+# ACCESS_TOKEN_URL         - e.g. https://<team>.cloudflareaccess.com/cdn-cgi/access/sso/oidc/<client-id>/token
+# ACCESS_AUTHORIZATION_URL - e.g. https://<team>.cloudflareaccess.com/cdn-cgi/access/sso/oidc/<client-id>/authorization
+# ACCESS_JWKS_URL          - e.g. https://<team>.cloudflareaccess.com/cdn-cgi/access/sso/oidc/<client-id>/jwks
+# COOKIE_ENCRYPTION_KEY    - Random string for signing approval cookies
 
 # Staging environment
 [env.staging]

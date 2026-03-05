@@ -1,7 +1,7 @@
 {
   "name": "mcp-skeleton",
   "version": "1.0.0",
-  "description": "Template for building multi-mode MCP servers (stdio, HTTP/SSE, Cloudflare Workers)",
+  "description": "Template for building multi-mode MCP servers (stdio, HTTP, Cloudflare Workers)",
   "private": false,
   "type": "module",
   "main": "dist/cli.js",
@@ -27,12 +27,14 @@
     "cloudflare-workers",
     "stdio",
     "http",
-    "sse"
+    "streamable-http"
   ],
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@cloudflare/workers-oauth-provider": "^0.3.0",
     "@modelcontextprotocol/sdk": "^1.27.1",
+    "agents": "^0.7.4",
     "hono": "^4.11.4",
     "zod": "^4.3.6"
   },

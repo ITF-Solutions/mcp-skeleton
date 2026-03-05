@@ -21,7 +21,7 @@ export interface CreateMcpAppOptions {
 // ============================================================================
 
 /**
- * Create a Hono HTTP app with MCP SSE endpoint.
+ * Create a Hono HTTP app with MCP Streamable HTTP endpoint.
  * Uses Web Standard Streamable HTTP transport (works on Node.js, Workers, Deno, Bun).
  *
  * CRITICAL: This implements per-session server instances.
@@ -49,7 +49,7 @@ export function createMcpApp(options: CreateMcpAppOptions): Hono {
   > = {};
 
   // MCP POST endpoint handler
-  app.post("/sse", async (c) => {
+  app.post("/mcp", async (c) => {
     const sessionId = c.req.header("mcp-session-id");
 
     try {
@@ -113,8 +113,8 @@ export function createMcpApp(options: CreateMcpAppOptions): Hono {
     }
   });
 
-  // MCP GET endpoint handler (for SSE streams)
-  app.get("/sse", async (c) => {
+  // MCP GET endpoint handler (for streaming responses)
+  app.get("/mcp", async (c) => {
     const sessionId = c.req.header("mcp-session-id");
 
     if (!sessionId || !sessions[sessionId]) {
