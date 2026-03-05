@@ -81,7 +81,15 @@ npm run test:watch
 
 # Run type check
 npm run typecheck
+
+# Build for Node.js (stdio + HTTP)
+npm run build
+
+# Build for Cloudflare Workers (includes auth)
+npm run build:worker
 ```
+
+**Note:** Auth files (`src/auth/`) are excluded from the Node.js build (they use Worker-specific types). Only the Worker build (`tsconfig.worker.json`) includes them. If you're working on OAuth functionality, verify both builds pass.
 
 ## Code Style
 

@@ -5,6 +5,6 @@
     "types": ["@cloudflare/workers-types"],
     "noEmit": false
   },
-  "include": ["src/entrypoints/worker.ts", "src/http/**/*", "src/storage/**/*", "src/tools/**/*"],
+  "include": ["src/entrypoints/worker.ts", "src/auth/**/*", "src/http/**/*", "src/storage/**/*", "src/tools/**/*"],
   "exclude": ["node_modules", "dist", "src/entrypoints/stdio.ts", "src/entrypoints/http.ts", "src/cli.ts", "src/http-server.ts"]
 }

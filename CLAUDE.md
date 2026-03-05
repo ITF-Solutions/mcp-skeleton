@@ -40,12 +40,14 @@ npm run dev:http     # Dev mode (http) with hot reload
 ## Project Structure
 
 - `src/` - All source code (TypeScript)
-  - `http/` - HTTP/SSE endpoint with session management (100% boilerplate)
+  - `auth/` - OAuth handler and OIDC utilities (worker mode only, excluded from Node.js build)
+  - `http/` - Streamable HTTP endpoint with session management (100% boilerplate)
   - `entrypoints/` - Runtime-specific entrypoints (stdio, http, worker)
-  - `storage/` - Storage interface and implementations
+  - `storage/` - Storage interface and implementations (in-memory + encrypted KV)
   - `tools/` - MCP tool registration (**EXTENSION POINT**)
   - `config.ts` - Environment configuration loader (**EXTENSION POINT**)
-- `terraform/` - Cloudflare infrastructure (optional)
+- `docs/` - Deployment guides, transport explainer, OAuth documentation
+- `infrastructure/cloudflare-access/` - Terraform for Cloudflare Access OIDC provider
 - `.github/workflows/` - CI (build/test/lint) and Release (release-please)
 
 ## Key Conventions
@@ -55,6 +57,8 @@ npm run dev:http     # Dev mode (http) with hot reload
 - Vitest for testing
 - Interface-driven storage (swappable implementations)
 - One MCP server instance per HTTP client session
+- `tsconfig.json` excludes `src/auth/` (worker-only, uses WebWorker types)
+- `tsconfig.worker.json` includes `src/auth/` and uses `@cloudflare/workers-types`
 
 ## Extension Points
 

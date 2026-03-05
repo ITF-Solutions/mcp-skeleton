@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  terraform:
+    image: hashicorp/terraform:latest
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    environment:
+      - TF_VAR_cloudflare_api_token=${CLOUDFLARE_API_TOKEN}
+      - TF_VAR_cloudflare_account_id=${CLOUDFLARE_ACCOUNT_ID}
+    entrypoint: terraform
