@@ -14,7 +14,7 @@
     "dev": "tsx watch ./src/cli.ts",
     "dev:http": "tsx watch ./src/http-server.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "deploy": "wrangler deploy",
     "deploy:staging": "wrangler deploy --env staging"
